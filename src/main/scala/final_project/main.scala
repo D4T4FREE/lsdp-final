@@ -16,6 +16,11 @@ object main{
   Logger.getLogger("org.spark-project").setLevel(Level.WARN)
   
   
+  def Israeli_Itai(g_in: Graph[Int,Int]): Graph[Int,Int]={//we can use this or change LubyMIS from last time
+    
+  }
+  
+  
   def main(args: Array[String]){
     val conf = new SparkConf().setAppName("final_project")
     val sc = new SparkContext(conf)
