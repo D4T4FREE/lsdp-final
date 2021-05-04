@@ -97,5 +97,9 @@ object main{
       val g2df = spark.createDataFrame(g2.vertices)
       g2df.coalesce(1).write.format("csv").mode("overwrite").save(args(2))
    }
+    else{
+      println("Usage:Final project")
+      sys.exit(1)
+    }
   }
 }
