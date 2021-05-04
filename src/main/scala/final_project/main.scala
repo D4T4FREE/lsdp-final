@@ -22,40 +22,48 @@ object main{
    
     while(remaining_vertices>=1){
       var r=scala.util.Random
-      val v1:VertexRDD[Int]=g.aggregateMessages[Int](
+      val v1:VertexRDD[(Int,Int)]=g.aggregateMessages[(Int,Int)](
           triplet=>{
-            if(triplet.dstAttr(_._2)!=1){
-              triplet.sendToDst((triplet.srcId,1)) //vertex sends (vertexId,1) to neighbors
+            if(triplet.dstAttr!=1){
+              triplet.sendToDst((triplet.srcId.toInt,1))
             }
           },
-        (a,b)=> if(r.nextFloat<0.5) a else b//upon receiving, merge msg by randomly picking one proposal from neighbors
-        }
+        (a,b)=> (if(r.nextFloat<0.5) a else b)
         )
       
       val g1=g.joinVertices(v1)(
-          (id, (id_num,mark))=>id_num
-        )
+          (id, id_num,mark)=>id_num)
       
       val v2:VertexRDD[Int]=g1.aggregateMessages[Int](
         triplet=>{
           if(triplet.srcId==triplet.dstAttr){
-            triplet.send(r.nextInt%2)//randomly generate 0 or 1
-            triplet.send(r.nextInt%2)
+            triplet.sendToDst(r.nextInt%2)
+            triplet.sendToSrc(r.nextInt%2)
           }
         },
-        (a,b)=a+b
+        (a,b)=>a+b
         )
       
       val g2=g1.joinVertices(v2)(
-          (id,old,new1)=>new1
+          (id,old,new1)=>new1)
+      
+      val v3:VertexRDD[Int]=g2.aggregateMessages[Int](
+        triplet=>{
+          if(triplet.srcAttr==0 && triplet.dstAttr==1){
+            triplet.sendToDst(5)
+            triplet.sendToSrc(5)
+          }
+        },
+        (a,b)=> if(a==5 ||b==5) 5 else 0
         )
         
-      val g3=g2.vertices.filter(v=>v.srcAttr=0 && v.dstAttr=1)
+      val g3=g2.joinVertices(v3)(
+          (id,old,new2)=>new2)
       
       g=g3
       g.cache()
       
-      remaining_vertices=g.vertices.filter({case(id,x)=>(x!=0)&&(x!=1)}).count().toInt
+      remaining_vertices=g3.vertices.count().toInt
     }
     //use from edges
     return g
