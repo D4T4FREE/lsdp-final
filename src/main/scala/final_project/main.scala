@@ -25,10 +25,10 @@ object main{
       val v1:VertexRDD[(Int,Int)]=g.aggregateMessages[(Int,Int)](
           triplet=>{
             if(triplet.dstAttr!=1){
-              triplet.sendToDst((triplet.srcId.toInt,1)).//send (vertexId, 1) to all neighbors
+              triplet.sendToDst((triplet.srcId.toInt,1))//send (vertexID,1) to neighbors
             }
           },
-        (a,b)=> (if(r.nextFloat<0.5) a else b)//upon receiving the proposals, randomly choose an edge
+        (a,b)=> (if(r.nextFloat<a._2/(a._2+b._2)) (a._1,a._2+b._2) else b)//randomly choose one proposal
         )
       
       val g1=g.joinVertices(v1)(
@@ -37,8 +37,8 @@ object main{
       val v2:VertexRDD[Int]=g1.aggregateMessages[Int](
         triplet=>{
           if(triplet.srcId==triplet.dstAttr){
-            triplet.sendToDst(r.nextInt%2)
-            triplet.sendToSrc(r.nextInt%2)//randomly generate 0 and 1
+            triplet.sendToDst(r.nextInt%2)//randomly generate 0 or 1
+            triplet.sendToSrc(r.nextInt%2)
           }
         },
         (a,b)=>a+b
@@ -54,7 +54,7 @@ object main{
             triplet.sendToSrc(5)
           }
         },
-        (a,b)=> if(a==5 ||b==5) 5 else 0 //add wanted edges to M
+        (a,b)=>Math.min(a,b)
         )
         
       val g3=g2.joinVertices(v3)(
