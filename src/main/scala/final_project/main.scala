@@ -16,8 +16,49 @@ object main{
   Logger.getLogger("org.spark-project").setLevel(Level.WARN)
   
   
-  def Israeli_Itai(g_in: Graph[Int,Int]): Graph[Int,Int]={//we can use this or change LubyMIS from last time
-    
+   def Israeli_Itai(g_in: Graph[Int,Int]): Graph[Int,Int] = {
+    var g=g_in
+    var remaining_vertices=2
+   
+    while(remaining_vertices>=1){
+      var r=scala.util.Random
+      val v1:VertexRDD[Int]=g.aggregateMessages[Int](
+          triplet=>{
+            if(triplet.dstAttr(_._2)!=1){
+              triplet.sendToDst((triplet.srcId,1)) //vertex sends (vertexId,1) to neighbors
+            }
+          },
+        (a,b)=> if(r.nextFloat<0.5) a else b//upon receiving, merge msg by randomly picking one proposal from neighbors
+        }
+        )
+      
+      val g1=g.joinVertices(v1)(
+          (id, (id_num,mark))=>id_num
+        )
+      
+      val v2:VertexRDD[Int]=g1.aggregateMessages[Int](
+        triplet=>{
+          if(triplet.srcId==triplet.dstAttr){
+            triplet.send(r.nextInt%2)//randomly generate 0 or 1
+            triplet.send(r.nextInt%2)
+          }
+        },
+        (a,b)=a+b
+        )
+      
+      val g2=g1.joinVertices(v2)(
+          (id,old,new1)=>new1
+        )
+        
+      val g3=g2.vertices.filter(v=>v.srcAttr=0 && v.dstAttr=1)
+      
+      g=g3
+      g.cache()
+      
+      remaining_vertices=g.vertices.filter({case(id,x)=>(x!=0)&&(x!=1)}).count().toInt
+    }
+    //use from edges
+    return g
   }
   
   
@@ -37,7 +78,7 @@ object main{
       val startTimeMillis = System.currentTimeMillis()
       val edges = sc.textFile(args(1)).map(line => {val x = line.split(","); Edge(x(0).toLong, x(1).toLong , 1)} )
       val g = Graph.fromEdges[Int, Int](edges, 0, edgeStorageLevel = StorageLevel.MEMORY_AND_DISK, vertexStorageLevel = StorageLevel.MEMORY_AND_DISK)
-      val g2 = LubyMIS(g)//change this
+      val g2 = Israeli_Itai(g)//change this
 
       val endTimeMillis = System.currentTimeMillis()
       val durationSeconds = (endTimeMillis - startTimeMillis) / 1000
