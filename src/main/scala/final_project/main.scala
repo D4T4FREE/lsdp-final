@@ -70,9 +70,50 @@ object main{
     return g
   }
 
-  //def find_augmenting_path(g_in: Graph[Int,Int], m_in:Graph[Int,Int]):Graph[Int,Int]={
-    //blossom
-  //}
+  // g_in : Graph G
+  // m_in : matching M on G
+  def find_augmenting_path(g_in: Graph[Int,Int], m_in:Graph[Int,Int]):Graph[Int,Int]={
+    // thank you internet for helping me come up with pseudocode
+    // notes from prof: restrict length of augmenting path, restrict size of blossom
+
+    // F <- empty forest
+
+    // unmark all vertices and edges in G, mark all edges of match
+
+    // for each exposed vertex v do
+      // create a singleton tree { v } and add the tree to F
+    //end for
+
+    // while there is an umarked vertex v in F with distance(v, root(v)) even do
+      // while there exists an unarked edge e = { v, w } do
+        // if w is not in F then
+          // // w is matched, so add e and w's matched edge to F
+          // x <- vertex matched to w in match
+          // add edges { v, w } and { w, x } to the tree of v
+        // else
+          // if distance(w, root(w)) is odd then
+            // // Do nothing.
+          // else
+            // if root(v) != root(w) then
+              // // Report an augmenting path in F union { e }
+              // P <- path (root(v) -> ... >- v) -> (w -> ... -> root(w))
+              // return P
+            // else
+              // // Contract a blossom in G and look for the path in the contracted graph
+              // B <- blossom formed by e and edges on the path v -> w in T
+              // G', M' <- contract G and M by B
+              // P' <- find_augmenting_path(G', M')
+              // P <- lift P' to G
+              // return P
+            // end if
+          //end if
+        // end if
+        // mark edge e
+      // end while
+      // mark vertex v
+    // end while
+    // return empty path
+  }
 
 
   def main(args: Array[String]){
