@@ -29,7 +29,7 @@ object main{
               triplet.sendToDst((triplet.srcId.toInt,1))//send (vertexID,1) to neighbors
             }
           },
-        (a,b)=> (if(r.nextFloat<a._2/(a._2+b._2)) (a._1,a._2+b._2) else b)//randomly choose one proposal
+        (a,b)=> (if(r.nextFloat<a._2/(a._2+b._2)) (a._1,a._2+b._2) else (b._1,a._2+b._2))//randomly choose one proposal
         )
 
       val g1=g.joinVertices(v1)(
