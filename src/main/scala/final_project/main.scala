@@ -72,7 +72,7 @@ object main{
 
   // g_in : Graph G
   // m_in : matching M on G
-  def find_augmenting_path(g_in: Graph[Int,Int], m_in:Graph[Int,Int]):List(Int,Int)={//path is a list of tuples
+  def find_augmenting_path(g_in: Graph[Int,Int], m_in:Graph[Int,Int]):List[(Int,Int)]={//path is a list of tuples
     // thank you internet for helping me come up with pseudocode
     // notes from prof: restrict length of augmenting path, restrict size of blossom
 
@@ -124,9 +124,36 @@ object main{
     }
   }
 
-  def augment(List(Int,Int)):List(Int,Int){
+  def augment(m_in: Graph[Int,Int], p_in: List[(Int,Int)]): Graph[Int,Int]={
+    var g=m_in
+    var p=p_in
+    for(i<- 1 to p.length){
+      val a=p(i)
+      val b=p(i+1)
+      val v1: VertexRDD[Int]=g.aggregateMessages[Int](
+          triplet=>{
+            if(triplet.srcId==a._2 && triplet.dstId==b._1){//flip the path
+              triplet.sendToSrc(5)
+              triplet.sendToDst(5)
+            }
+          },
+        (a,b)=>Math.max(a,b)
+        ) 
+    }
+    val g1=g.joinVertices(v1)(
+      (id,mark)=>mark
+      )
+    val v2=g1.vertices.filter({case(id,x)=>(x==5)})
+    val g2=g1.joinVertices(v2)(
+      (id,old,new1)=>new1
+      )
     
-  }
+    g=g2
+    g.cache()
+    
+    return g    
+    }
+
 
   def main(args: Array[String]){
     val conf = new SparkConf().setAppName("final_project")
