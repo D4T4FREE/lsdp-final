@@ -72,7 +72,7 @@ object main{
 
   // g_in : Graph G
   // m_in : matching M on G
-  def find_augmenting_path(g_in: Graph[Int,Int], m_in:Graph[Int,Int]):Graph[Int,Int]={
+  def find_augmenting_path(g_in: Graph[Int,Int], m_in:Graph[Int,Int]):List(Int,Int)={//path is a list of tuples
     // thank you internet for helping me come up with pseudocode
     // notes from prof: restrict length of augmenting path, restrict size of blossom
 
