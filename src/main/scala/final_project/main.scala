@@ -115,6 +115,13 @@ object main{
     // return empty path
   }
   def find_maximum_matching(g_in:Graph[Int,Int], m_in:Graph[Int,Int]):Graph[Int,Int]{
+    val aug_path=find_augmenting_path(g_in,m_in)
+    if(len(aug_path)>0){
+      return find_maximum_matching(g_in, augment(aug_path))
+    }
+    else
+      return m_in
+    }
      //function find_maximum_matching(G, M) : M*
      // P ← find_augmenting_path(G, M)
   //   if P is non-empty then
