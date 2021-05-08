@@ -26,20 +26,20 @@ object main{
       // Step 1: propose to a neighbor (send your id to neighbors and they will filter out 1)
       val v1:VertexRDD[Int] = g.aggregateMessages[Int](
         triplet => {
-          if (triplet.dstAttr != -1) {
+          if (triplet.dstAttr < 0) {
             triplet.sendToDst(triplet.srcId.toInt)
           }
         },
         (a,b) => if (r.nextInt%2 == 1) a else b
       )
       val g1 = g.joinVertices(v1)(
-        (uid, oldattr, proposed_id) => if (oldattr == -1) oldattr else proposed_id
+        (uid, oldattr, proposed_id) => if (oldattr < 0) oldattr else proposed_id
       )
 
       // Step 2: filter out the proposed_id
       val v2:VertexRDD[Int] = g1.aggregateMessages[Int](
         triplet => {
-          if (triplet.dstAttr != -1 && triplet.dstAttr == triplet.srcId.toInt) {
+          if (triplet.dstAttr < 0 && triplet.dstAttr == triplet.srcId.toInt) {
             triplet.sendToDst(0)
             triplet.sendToSrc(triplet.dstId.toInt)
           }
@@ -47,13 +47,13 @@ object main{
         (a,b) => if (r.nextInt%2 == 1) a else b
       )
       val g2 = g1.joinVertices(v2)(
-        (uid, oldattr, filtered_id) => if (oldattr == -1) oldattr else filtered_id
+        (uid, oldattr, filtered_id) => if (oldattr < 0) oldattr else filtered_id
       )
 
       // Step 2.5: do it again because i hate myself
       val v5:VertexRDD[Int] = g2.aggregateMessages[Int](
         triplet => {
-          if (triplet.dstAttr != -1 && triplet.dstAttr == triplet.srcId.toInt) {
+          if (triplet.dstAttr < 0 && triplet.dstAttr == triplet.srcId.toInt) {
             triplet.sendToDst(0)
             triplet.sendToSrc(triplet.dstId.toInt)
           }
@@ -61,43 +61,43 @@ object main{
         (a,b) => if (r.nextInt%2 == 1) a else b
       )
       val g5 = g2.joinVertices(v5)(
-        (uid, oldattr, filtered_id) => if (oldattr == -1) oldattr else filtered_id
+        (uid, oldattr, filtered_id) => if (oldattr < 0) oldattr else filtered_id
       )
 
       // Step 3: generate 0 and 1 for each vertex
       val v3:VertexRDD[Int] = g5.aggregateMessages[Int](
         triplet => {
-          if (triplet.srcAttr != -1) {
+          if (triplet.srcAttr < 0) {
             triplet.sendToSrc(r.nextInt%2)
           }
-          if (triplet.dstAttr != -1) {
+          if (triplet.dstAttr < 0) {
             triplet.sendToDst(r.nextInt%2)
           }
         },
         (a,b) => (a + b)%2
       )
       val g3 = g5.joinVertices(v3)(
-        (uid, oldattr, onezero) => if (oldattr == -1) oldattr else onezero*oldattr
+        (uid, oldattr, onezero) => if (oldattr < 0) oldattr else onezero*oldattr
       )
 
       // Step 4: figure out which proposals worked
       val v4:VertexRDD[Int] = g3.aggregateMessages[Int](
         triplet => {
-          if (triplet.srcAttr == triplet.dstId.toInt && triplet.dstAttr != -1) {
+          if (triplet.srcAttr == triplet.dstId.toInt && triplet.dstAttr < 0) {
             println(triplet.srcId + "," + triplet.dstId)
-            triplet.sendToDst(-1)
-            triplet.sendToSrc(-1)
+            triplet.sendToDst(-1 * triplet.srcId.toInt)
+            triplet.sendToSrc(-1 * triplet.srcId.toInt)
           }
         },
         (a,b) => Math.min(a,b)
       )
       val g4 = g3.joinVertices(v4)(
-        (uid, oldattr, finished) => if (oldattr == -1 || finished == -1) -1 else 0
+        (uid, oldattr, finished) => if (oldattr < 0 || finished < 0 ) Math.min(oldattr, finished) else 0
       )
       g = g4
       g.cache()
 
-      remaining_vertices = g.triplets.filter({case triplet => (triplet.srcAttr != -1) && (triplet.dstAttr != -1)}).count().toInt
+      remaining_vertices = g.triplets.filter({case triplet => (triplet.srcAttr >= 0) && (triplet.dstAttr >= 0)}).count().toInt
     }
     return g_out
   }
