@@ -50,8 +50,22 @@ object main{
         (uid, oldattr, filtered_id) => if (oldattr == -1) oldattr else filtered_id
       )
 
+      // Step 2.5: do it again because i hate myself
+      val v5:VertexRDD[Int] = g2.aggregateMessages[Int](
+        triplet => {
+          if (triplet.dstAttr != -1 && triplet.dstAttr == triplet.srcId.toInt) {
+            triplet.sendToDst(0)
+            triplet.sendToSrc(triplet.dstId.toInt)
+          }
+        },
+        (a,b) => if (r.nextInt%2 == 1) a else b
+      )
+      val g5 = g2.joinVertices(v5)(
+        (uid, oldattr, filtered_id) => if (oldattr == -1) oldattr else filtered_id
+      )
+
       // Step 3: generate 0 and 1 for each vertex
-      val v3:VertexRDD[Int] = g2.aggregateMessages[Int](
+      val v3:VertexRDD[Int] = g5.aggregateMessages[Int](
         triplet => {
           if (triplet.srcAttr != -1) {
             triplet.sendToSrc(r.nextInt%2)
@@ -62,7 +76,7 @@ object main{
         },
         (a,b) => (a + b)%2
       )
-      val g3 = g2.joinVertices(v3)(
+      val g3 = g5.joinVertices(v3)(
         (uid, oldattr, onezero) => if (oldattr == -1) oldattr else onezero*oldattr
       )
 
