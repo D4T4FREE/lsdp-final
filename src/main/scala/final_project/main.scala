@@ -30,9 +30,9 @@ object main{
             if(triplet.dstAttr != 7){
               triplet.sendToDst((triplet.srcId.toInt,1)) //send (vertexID,1) to neighbors
             }
-            if(triplet.srcAttr != 7){ //undirected graph so other way too
-              triplet.sendToSrc((triplet.dstId.toInt,1)) //send (vertexID,1) to neighbors
-            }
+            //if(triplet.srcAttr != 7){ //undirected graph so other way too
+              //triplet.sendToSrc((triplet.dstId.toInt,1)) //send (vertexID,1) to neighbors
+            //}
           },
         (a,b)=> (if(r.nextFloat<a._2/(a._2+b._2)) (a._1,a._2+b._2) else (b._1,a._2+b._2)) //randomly choose one proposal
         )
@@ -48,10 +48,10 @@ object main{
              triplet.sendToDst(r.nextInt%2) //randomly generate 0 or 1
              triplet.sendToSrc(r.nextInt%2)
             }
-          if(triplet.dstId.toInt==triplet.srcAttr){ //src -> dst
-            triplet.sendToDst(r.nextInt%2) //randomly generate 0 or 1
-            triplet.sendToSrc(r.nextInt%2)
-          }
+          //if(triplet.dstId.toInt==triplet.srcAttr){ //src -> dst
+            //triplet.sendToDst(r.nextInt%2) //randomly generate 0 or 1
+            //triplet.sendToSrc(r.nextInt%2)
+          //}
         },
         (a,b)=> (a + b)%2 //finish with a 0 or a 1
         )
@@ -61,18 +61,18 @@ object main{
 
       val v3:VertexRDD[Int]=g2.aggregateMessages[Int](
         triplet=>{
-          if(triplet.srcAttr==0 && triplet.dstAttr==triplet.srcId.toInt){
-            println((triplet.srcId.toInt, triplet.dstAttr.toInt))
-            g_out = g_out :+ (triplet.srcId.toInt, triplet.dstAttr.toInt)
+          if(triplet.srcAttr == 0 && triplet.dstAttr == triplet.srcId.toInt){
+            println((triplet.srcId.toInt, triplet.dstId.toInt))
+            g_out = (triplet.srcId.toInt, triplet.dstAttr.toInt) :: g_out
             triplet.sendToDst(7)
             triplet.sendToSrc(7)
           }
-          if(triplet.dstAttr==0 && triplet.srcAttr==triplet.dstId.toInt){
-            println((triplet.srcId.toInt, triplet.dstAttr.toInt))
-            g_out = g_out :+ (triplet.srcId.toInt, triplet.dstAttr.toInt)
-            triplet.sendToDst(7)
-            triplet.sendToSrc(7)
-          }
+          //if(triplet.dstAttr == 0 && triplet.srcAttr == triplet.dstId.toInt){
+            //println((triplet.srcId.toInt, triplet.dstAttr.toInt))
+            //g_out = (triplet.srcId.toInt, triplet.dstAttr.toInt) :: g_out
+            //triplet.sendToDst(7)
+            //triplet.sendToSrc(7)
+          //}
         },
         (a,b)=>Math.min(a,b)
         )
