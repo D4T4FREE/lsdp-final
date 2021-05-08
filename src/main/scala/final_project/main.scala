@@ -17,42 +17,61 @@ object main{
   Logger.getLogger("org.spark-project").setLevel(Level.WARN)
 
 
-   def Israeli_Itai(g_in: Graph[Int,Int]): Graph[Int,Int] = {
+   def Israeli_Itai(g_in: Graph[Int,Int]): List[(Int,Int)] = {
     var g=g_in
+    var g_out : List[(Int, Int)] = List()
     var remaining_vertices=2
+    var r=scala.util.Random
 
     while(remaining_vertices>=1){
-      var r=scala.util.Random
+      // Step 1: send a proposal to neighbors (except to -1 because it is finished)
       val v1:VertexRDD[(Int,Int)]=g.aggregateMessages[(Int,Int)](
           triplet=>{
-            if(triplet.dstAttr!=1){
-              triplet.sendToDst((triplet.srcId.toInt,1))//send (vertexID,1) to neighbors
+            if(triplet.dstAttr != 7){
+              triplet.sendToDst((triplet.srcId.toInt,1)) //send (vertexID,1) to neighbors
+            }
+            if(triplet.srcAttr != 7){ //undirected graph so other way too
+              triplet.sendToSrc((triplet.dstId.toInt,1)) //send (vertexID,1) to neighbors
             }
           },
-        (a,b)=> (if(r.nextFloat<a._2/(a._2+b._2)) (a._1,a._2+b._2) else (b._1,a._2+b._2))//randomly choose one proposal
+        (a,b)=> (if(r.nextFloat<a._2/(a._2+b._2)) (a._1,a._2+b._2) else (b._1,a._2+b._2)) //randomly choose one proposal
         )
 
       val g1=g.joinVertices(v1)(
-          (id, id_num,mark)=>id_num)
+          (id, old, new1) => new1._1) //id_num
 
+      // Step 2:
       val v2:VertexRDD[Int]=g1.aggregateMessages[Int](
         triplet=>{
-          if(triplet.srcId==triplet.dstAttr){
-            triplet.sendToDst(r.nextInt%2)//randomly generate 0 or 1
+          // use prime factorization to preserve information through next aggregateMessages
+          if(triplet.srcId.toInt==triplet.dstAttr){ //dst -> src
+             triplet.sendToDst(r.nextInt%2) //randomly generate 0 or 1
+             triplet.sendToSrc(r.nextInt%2)
+            }
+          if(triplet.dstId.toInt==triplet.srcAttr){ //src -> dst
+            triplet.sendToDst(r.nextInt%2) //randomly generate 0 or 1
             triplet.sendToSrc(r.nextInt%2)
           }
         },
-        (a,b)=>a+b
+        (a,b)=> (a + b)%2 //finish with a 0 or a 1
         )
 
       val g2=g1.joinVertices(v2)(
-          (id,old,new1)=>new1)
+          (id,old,new1) => if (old != 7) (new1 * old) else (old))
 
-      val v3:VertexRDD[Int]=g2.aggregateMessages[Int](
+      val v3:VertexRDD[Int, Int]=g2.aggregateMessages[Int](
         triplet=>{
-          if(triplet.srcAttr==0 && triplet.dstAttr==1){
-            triplet.sendToDst(5)
-            triplet.sendToSrc(5)
+          if(triplet.srcAttr==0 && triplet.dstAttr==triplet.srcId.toInt){
+            g_out = g_out :+ (triplet.srcId.toInt, triplet.dstAttr.toInt)
+            triplet.sendToDst(7)
+            triplet.sendToSrc(7)
+            triplet.attr = 7
+          }
+          if(triplet.dstAttr==0 && triplet.srcAttr==triplet.dstId.toInt){
+            g_out = g_out :+ (triplet.srcId.toInt, triplet.dstAttr.toInt)
+            triplet.sendToDst(7)
+            triplet.sendToSrc(7)
+            triplet.attr = 7
           }
         },
         (a,b)=>Math.min(a,b)
@@ -64,15 +83,15 @@ object main{
       g=g3
       g.cache()
 
-      remaining_vertices=g3.vertices.count().toInt
+      remaining_vertices = g.edges.filter({case edge => (edge.attr != 7)}).count().toInt
     }
     //use from edges
-    return g
+    return g_out
   }
 
   // g_in : Graph G
   // m_in : matching M on G
-  def find_augmenting_path(g_in: Graph[Int,Int], m_in:Graph[Int,Int]):List[(Int,Int)]={//path is a list of tuples
+  // def find_augmenting_path(g_in: Graph[Int,Int], m_in:Graph[Int,Int]):List[(Int,Int)]={ //path is a list of tuples
     // thank you internet for helping me come up with pseudocode
     // notes from prof: restrict length of augmenting path, restrict size of blossom
 
@@ -113,46 +132,48 @@ object main{
       // mark vertex v
     // end while
     // return empty path
-  }
-  def find_maximum_matching(g_in:Graph[Int,Int], m_in:Graph[Int,Int]):Graph[Int,Int]{
-    val aug_path=find_augmenting_path(g_in,m_in)
-    if(len(aug_path)>0){
-      return find_maximum_matching(g_in, augment(aug_path))
-    }
-    else
-      return m_in
-    }
-  }
+  // }
+  // def find_maximum_matching(g_in:Graph[Int,Int], m_in:Graph[Int,Int]):Graph[Int,Int]{
+    // val aug_path = find_augmenting_path(g_in,m_in)
+    // if(len(aug_path) > 0){
+      // return find_maximum_matching(g_in, augment(aug_path))
+    // }
+    // else
+      // return m_in
+    // }
+  // }
 
-  def augment(m_in: Graph[Int,Int], p_in: List[(Int,Int)]): Graph[Int,Int]={
-    var g=m_in
-    var p=p_in
-    for(i<- 1 to p.length){
-      val a=p(i)
-      val b=p(i+1)
-      val v1: VertexRDD[Int]=g.aggregateMessages[Int](
-          triplet=>{
-            if(triplet.srcId==a._2 && triplet.dstId==b._1){//flip the path
-              triplet.sendToSrc(5)
-              triplet.sendToDst(5)
-            }
-          },
-        (a,b)=>Math.max(a,b)
-        ) 
-    }
-    val g1=g.joinVertices(v1)(
-      (id,mark)=>mark
-      )
-    val v2=g1.vertices.filter({case(id,x)=>(x==5)})
-    val g2=g1.joinVertices(v2)(
-      (id,old,new1)=>new1
-      )
-    
-    g=g2
-    g.cache()
-    
-    return g    
-    }
+  // def augment(m_in: Graph[Int,Int], p_in: List[(Int,Int)]): Graph[Int,Int]={
+    //var g=m_in
+    //var p=p_in
+    //for(i<- 1 to p.length){
+      //val a=p(i)
+      //val b=p(i+1)
+      //val v1: VertexRDD[Int]=g.aggregateMessages[Int](
+          //triplet=>{
+            //if(triplet.srcId==a._2 && triplet.dstId==b._1){ //flip the path
+              //triplet.sendToSrc(5)
+              //triplet.sendToDst(5)
+            //}
+          //},
+        //(a,b)=>Math.max(a,b)
+        //)
+    //}
+
+    //val g1=g.joinVertices(v1)(
+      //(id,mark)=>mark
+      //)
+
+    //val v2=g1.vertices.filter({case(id,x)=>(x==5)})
+    //val g2=g1.joinVertices(v2)(
+      //(id,old,new1)=>new1
+      //)
+
+    //g=g2
+    //g.cache()
+
+    //return g
+    //}
 
 
   def main(args: Array[String]){
