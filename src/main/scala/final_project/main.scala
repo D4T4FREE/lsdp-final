@@ -16,7 +16,7 @@ object main{
   Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
   Logger.getLogger("org.spark-project").setLevel(Level.WARN)
 
-  def Israeli_Itai2(g_in: Graph[Int,Int]): List[(Int,Int)] = {
+  def Israeli_Itai(g_in: Graph[Int,Int]): List[(Int,Int)] = {
     var g = g_in
     var g_out : List[(Int, Int)] = List()
     var remaining_vertices = 2
@@ -88,99 +88,9 @@ object main{
     return g_out
   }
 
-   def Israeli_Itai(g_in: Graph[Int,Int]): List[(Int,Int)] = {
-    var g=g_in
-    var g_out : List[(Int, Int)] = List()
-    var remaining_vertices=2
-    var r=scala.util.Random
-
-    while(remaining_vertices>=1){
-      // Step 1: send a proposal to neighbors (except to -1 because it is finished)
-      val v1:VertexRDD[(Int,Int)]=g.aggregateMessages[(Int,Int)](
-          triplet=>{
-            if(triplet.dstAttr != 7){
-              triplet.sendToDst((triplet.srcId.toInt,1)) //send (vertexID,1) to neighbors
-            }
-            if(triplet.srcAttr != 7){ //undirected graph so other way too
-              triplet.sendToSrc((triplet.dstId.toInt,1)) //send (vertexID,1) to neighbors
-            }
-          },
-        (a,b)=> (if(r.nextFloat<a._2/(a._2+b._2)) (a._1,a._2+b._2) else (b._1,a._2+b._2)) //randomly choose one proposal
-        )
-
-      val g1=g.joinVertices(v1)(
-          (id, old, new1) => new1._1) //id_num
-
-      // step 2: accept 1 proposal
-      val v2 : VertexRDD[(Int,Int)]=g.aggregateMessages[(Int,Int)](
-          triplet=>{
-            if(triplet.dstAttr == triplet.srcId.toInt){
-              triplet.sendToSrc((triplet.dstId.toInt,1))
-              triplet.sendToDst((0,0)) //send (vertexID,1) to neighbors
-            }
-            if(triplet.srcAttr == triplet.dstId.toInt){
-              triplet.sendToDst((triplet.srcId.toInt,1))
-              triplet.sendToSrc((0,0)) //send (vertexID,1) to neighbors
-            }
-          },
-        (a,b)=> (if (a._2 == 0) (0,0) else (if(r.nextFloat<a._2/(a._2+b._2)) (a._1,a._2+b._2) else (b._1,a._2+b._2))) //randomly choose one proposal
-        )
-
-      val g2=g1.joinVertices(v2)(
-          (id, old, new1) => new1._1)
-
-      // Step 3: generate 0 and 1
-      val v3:VertexRDD[Int]=g2.aggregateMessages[Int](
-        triplet=>{
-          if(triplet.dstId.toInt == triplet.srcAttr){ //dst -> src
-             triplet.sendToDst(r.nextInt%2) //randomly generate 0 or 1
-             triplet.sendToSrc(r.nextInt%2)
-            }
-          if(triplet.srcId.toInt==triplet.dstAttr){ //src -> dst
-            triplet.sendToSrc(r.nextInt%2) //randomly generate 0 or 1
-            triplet.sendToDst(r.nextInt%2)
-          }
-        },
-        (a,b)=> (a + b)%2 //finish with a 0 or a 1
-        )
-
-      val g3=g2.joinVertices(v3)(
-          (id,old,new1) => if (old != 7) (new1 * old) else (old))
-
-      val v4:VertexRDD[Int]=g3.aggregateMessages[Int](
-        triplet=>{
-          if(triplet.srcAttr == 0 && triplet.dstAttr == triplet.srcId.toInt){
-            println((triplet.srcId.toInt, triplet.dstId.toInt))
-            g_out = (triplet.srcId.toInt, triplet.dstAttr.toInt) :: g_out
-            triplet.sendToDst(7)
-            triplet.sendToSrc(7)
-          }
-          //if(triplet.dstAttr == 0 && triplet.srcAttr == triplet.dstId.toInt){
-            //println((triplet.srcId.toInt, triplet.dstId.toInt))
-            //g_out = (triplet.srcId.toInt, triplet.dstAttr.toInt) :: g_out
-            //triplet.sendToDst(7)
-            //triplet.sendToSrc(7)
-          //}
-        },
-        (a,b)=>Math.min(a,b)
-        )
-
-      val g4=g3.joinVertices(v4)(
-          (id,old,new2)=>new2)
-
-      g=g4
-      g.cache()
-
-      remaining_vertices = g.triplets.filter({case triplet => (triplet.srcAttr != 7) && (triplet.dstAttr != 7)}).count().toInt
-    }
-    //use from edges
-    return g_out
-  }
-
   // g_in : Graph G
   // m_in : matching M on G
   // def find_augmenting_path(g_in: Graph[Int,Int], m_in:Graph[Int,Int]):List[(Int,Int)]={ //path is a list of tuples
-    // thank you internet for helping me come up with pseudocode
     // notes from prof: restrict length of augmenting path, restrict size of blossom
 
     // F <- empty forest
@@ -280,7 +190,7 @@ object main{
       val startTimeMillis = System.currentTimeMillis()
       val edges = sc.textFile(args(1)).map(line => {val x = line.split(","); Edge(x(0).toLong, x(1).toLong , 1)} )
       val g = Graph.fromEdges[Int, Int](edges, 0, edgeStorageLevel = StorageLevel.MEMORY_AND_DISK, vertexStorageLevel = StorageLevel.MEMORY_AND_DISK)
-      var g2 = Israeli_Itai2(g) //change this
+      var g2 = Israeli_Itai(g) //change this
 
       val endTimeMillis = System.currentTimeMillis()
       val durationSeconds = (endTimeMillis - startTimeMillis) / 1000
