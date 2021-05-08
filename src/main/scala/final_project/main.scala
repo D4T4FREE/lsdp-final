@@ -16,6 +16,77 @@ object main{
   Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
   Logger.getLogger("org.spark-project").setLevel(Level.WARN)
 
+  def Israeli_Itai2(g_in: Graph[Int,Int]): List[(Int,Int)] = {
+    var g = g_in
+    var g_out : List[(Int, Int)] = List()
+    var remaining_vertices = 2
+    var r = scala.util.Random
+
+    while(remaining_vertices >= 1) {
+      // Step 1: propose to a neighbor (send your id to neighbors and they will filter out 1)
+      val v1:VertexRDD[Int] = g.aggregateMessages[Int](
+        triplet => {
+          if (triplet.dstAttr != -1) {
+            triplet.sendToDst(triplet.srcId.toInt)
+          }
+        },
+        (a,b) => if (r.nextInt%2 == 1) a else b
+      )
+      val g1 = g.joinVertices(v1)(
+        (uid, oldattr, proposed_id) => if (oldattr == -1) oldattr else proposed_id
+      )
+
+      // Step 2: filter out the proposed_id
+      val v2:VertexRDD[Int] = g1.aggregateMessages[Int](
+        triplet => {
+          if (triplet.dstAttr != -1 && triplet.dstAttr == triplet.srcId.toInt) {
+            triplet.sendToDst(0)
+            triplet.sendToSrc(triplet.dstId.toInt)
+          }
+        },
+        (a,b) => if (r.nextInt%2 == 1) a else b
+      )
+      val g2 = g1.joinVertices(v2)(
+        (uid, oldattr, filtered_id) => if (oldattr == -1) oldattr else filtered_id
+      )
+
+      // Step 3: generate 0 and 1 for each vertex
+      val v3:VertexRDD[Int] = g2.aggregateMessages[Int](
+        triplet => {
+          if (triplet.srcAttr != -1) {
+            triplet.sendToSrc(r.nextInt%2)
+          }
+          if (triplet.dstAttr != -1) {
+            triplet.sendToDst(r.nextInt%2)
+          }
+        },
+        (a,b) => (a + b)%2
+      )
+      val g3 = g2.joinVertices(v3)(
+        (uid, oldattr, onezero) => if (oldattr == -1) oldattr else onezero*oldattr
+      )
+
+      // Step 4: figure out which proposals worked
+      val v4:VertexRDD[Int] = g3.aggregateMessages[Int](
+        triplet => {
+          if (triplet.srcAttr == triplet.dstId.toInt && triplet.dstAttr != -1) {
+            println(triplet.srcId + "," + triplet.dstId)
+            triplet.sendToDst(-1)
+            triplet.sendToSrc(-1)
+          }
+        },
+        (a,b) => Math.min(a,b)
+      )
+      val g4 = g3.joinVertices(v4)(
+        (uid, oldattr, finished) => if (oldattr == -1 || finished == -1) -1 else 0
+      )
+      g = g4
+      g.cache()
+
+      remaining_vertices = g.triplets.filter({case triplet => (triplet.srcAttr != -1) && (triplet.dstAttr != -1)}).count().toInt
+    }
+    return g_out
+  }
 
    def Israeli_Itai(g_in: Graph[Int,Int]): List[(Int,Int)] = {
     var g=g_in
@@ -209,7 +280,7 @@ object main{
       val startTimeMillis = System.currentTimeMillis()
       val edges = sc.textFile(args(1)).map(line => {val x = line.split(","); Edge(x(0).toLong, x(1).toLong , 1)} )
       val g = Graph.fromEdges[Int, Int](edges, 0, edgeStorageLevel = StorageLevel.MEMORY_AND_DISK, vertexStorageLevel = StorageLevel.MEMORY_AND_DISK)
-      var g2 = Israeli_Itai(g) //change this
+      var g2 = Israeli_Itai2(g) //change this
 
       val endTimeMillis = System.currentTimeMillis()
       val durationSeconds = (endTimeMillis - startTimeMillis) / 1000
