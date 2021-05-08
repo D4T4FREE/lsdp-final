@@ -30,9 +30,9 @@ object main{
             if(triplet.dstAttr != 7){
               triplet.sendToDst((triplet.srcId.toInt,1)) //send (vertexID,1) to neighbors
             }
-            //if(triplet.srcAttr != 7){ //undirected graph so other way too
-              //triplet.sendToSrc((triplet.dstId.toInt,1)) //send (vertexID,1) to neighbors
-            //}
+            if(triplet.srcAttr != 7){ //undirected graph so other way too
+              triplet.sendToSrc((triplet.dstId.toInt,1)) //send (vertexID,1) to neighbors
+            }
           },
         (a,b)=> (if(r.nextFloat<a._2/(a._2+b._2)) (a._1,a._2+b._2) else (b._1,a._2+b._2)) //randomly choose one proposal
         )
@@ -40,26 +40,43 @@ object main{
       val g1=g.joinVertices(v1)(
           (id, old, new1) => new1._1) //id_num
 
-      // Step 2:
-      val v2:VertexRDD[Int]=g1.aggregateMessages[Int](
+      // step 2: accept 1 proposal
+      val v2 : VertexRDD[(Int,Int)]=g.aggregateMessages[(Int,Int)](
+          triplet=>{
+            if(triplet.dstAttr == triplet.srcId.toInt){
+              triplet.sendToSrc((triplet.dstId.toInt,1))
+              triplet.sendToDst((0,0)) //send (vertexID,1) to neighbors
+            }
+            if(triplet.srcAttr == triplet.dstId.toInt){
+              triplet.sendToDst((triplet.srcId.toInt,1))
+              triplet.sendToSrc((0,0)) //send (vertexID,1) to neighbors
+            }
+          },
+        (a,b)=> (if (a._2 == 0) (0,0) else (if(r.nextFloat<a._2/(a._2+b._2)) (a._1,a._2+b._2) else (b._1,a._2+b._2))) //randomly choose one proposal
+        )
+
+      val g2=g1.joinVertices(v2)(
+          (id, old, new1) => new1._1)
+
+      // Step 3: generate 0 and 1
+      val v3:VertexRDD[Int]=g2.aggregateMessages[Int](
         triplet=>{
-          // use prime factorization to preserve information through next aggregateMessages
-          if(triplet.srcId.toInt==triplet.dstAttr){ //dst -> src
+          if(triplet.dstId.toInt == triplet.srcAttr){ //dst -> src
              triplet.sendToDst(r.nextInt%2) //randomly generate 0 or 1
              triplet.sendToSrc(r.nextInt%2)
             }
-          //if(triplet.dstId.toInt==triplet.srcAttr){ //src -> dst
-            //triplet.sendToDst(r.nextInt%2) //randomly generate 0 or 1
-            //triplet.sendToSrc(r.nextInt%2)
-          //}
+          if(triplet.srcId.toInt==triplet.dstAttr){ //src -> dst
+            triplet.sendToSrc(r.nextInt%2) //randomly generate 0 or 1
+            triplet.sendToDst(r.nextInt%2)
+          }
         },
         (a,b)=> (a + b)%2 //finish with a 0 or a 1
         )
 
-      val g2=g1.joinVertices(v2)(
+      val g3=g2.joinVertices(v3)(
           (id,old,new1) => if (old != 7) (new1 * old) else (old))
 
-      val v3:VertexRDD[Int]=g2.aggregateMessages[Int](
+      val v4:VertexRDD[Int]=g3.aggregateMessages[Int](
         triplet=>{
           if(triplet.srcAttr == 0 && triplet.dstAttr == triplet.srcId.toInt){
             println((triplet.srcId.toInt, triplet.dstId.toInt))
@@ -68,7 +85,7 @@ object main{
             triplet.sendToSrc(7)
           }
           //if(triplet.dstAttr == 0 && triplet.srcAttr == triplet.dstId.toInt){
-            //println((triplet.srcId.toInt, triplet.dstAttr.toInt))
+            //println((triplet.srcId.toInt, triplet.dstId.toInt))
             //g_out = (triplet.srcId.toInt, triplet.dstAttr.toInt) :: g_out
             //triplet.sendToDst(7)
             //triplet.sendToSrc(7)
@@ -77,10 +94,10 @@ object main{
         (a,b)=>Math.min(a,b)
         )
 
-      val g3=g2.joinVertices(v3)(
+      val g4=g3.joinVertices(v4)(
           (id,old,new2)=>new2)
 
-      g=g3
+      g=g4
       g.cache()
 
       remaining_vertices = g.triplets.filter({case triplet => (triplet.srcAttr != 7) && (triplet.dstAttr != 7)}).count().toInt
