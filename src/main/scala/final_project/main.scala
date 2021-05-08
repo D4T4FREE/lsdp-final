@@ -59,19 +59,17 @@ object main{
       val g2=g1.joinVertices(v2)(
           (id,old,new1) => if (old != 7) (new1 * old) else (old))
 
-      val v3:VertexRDD[Int, Int]=g2.aggregateMessages[Int](
+      val v3:VertexRDD[Int]=g2.aggregateMessages[Int](
         triplet=>{
           if(triplet.srcAttr==0 && triplet.dstAttr==triplet.srcId.toInt){
             g_out = g_out :+ (triplet.srcId.toInt, triplet.dstAttr.toInt)
             triplet.sendToDst(7)
             triplet.sendToSrc(7)
-            triplet.attr = 7
           }
           if(triplet.dstAttr==0 && triplet.srcAttr==triplet.dstId.toInt){
             g_out = g_out :+ (triplet.srcId.toInt, triplet.dstAttr.toInt)
             triplet.sendToDst(7)
             triplet.sendToSrc(7)
-            triplet.attr = 7
           }
         },
         (a,b)=>Math.min(a,b)
@@ -83,7 +81,7 @@ object main{
       g=g3
       g.cache()
 
-      remaining_vertices = g.edges.filter({case edge => (edge.attr != 7)}).count().toInt
+      remaining_vertices = g.triplets.filter({case triplet => (triplet.srcAttr != 7) && (triplet.dstAttr != 7)}).count().toInt
     }
     //use from edges
     return g_out
@@ -200,8 +198,8 @@ object main{
       println("Matching algorithm completed in " + durationSeconds + "s.") //change this
       println("==================================")
 
-      val g2df = spark.createDataFrame(g2.vertices)
-      g2df.coalesce(1).write.format("csv").mode("overwrite").save(args(2))
+      val g2df = spark.createDataFrame(g2.edges)
+      g2df.write.format("csv").mode("overwrite").save(args(2))
    }
     else{
       println("Usage: final_project graph_path output_path")
