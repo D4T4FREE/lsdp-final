@@ -62,11 +62,13 @@ object main{
       val v3:VertexRDD[Int]=g2.aggregateMessages[Int](
         triplet=>{
           if(triplet.srcAttr==0 && triplet.dstAttr==triplet.srcId.toInt){
+            println((triplet.srcId.toInt, triplet.dstAttr.toInt))
             g_out = g_out :+ (triplet.srcId.toInt, triplet.dstAttr.toInt)
             triplet.sendToDst(7)
             triplet.sendToSrc(7)
           }
           if(triplet.dstAttr==0 && triplet.srcAttr==triplet.dstId.toInt){
+            println((triplet.srcId.toInt, triplet.dstAttr.toInt))
             g_out = g_out :+ (triplet.srcId.toInt, triplet.dstAttr.toInt)
             triplet.sendToDst(7)
             triplet.sendToSrc(7)
@@ -190,7 +192,7 @@ object main{
       val startTimeMillis = System.currentTimeMillis()
       val edges = sc.textFile(args(1)).map(line => {val x = line.split(","); Edge(x(0).toLong, x(1).toLong , 1)} )
       val g = Graph.fromEdges[Int, Int](edges, 0, edgeStorageLevel = StorageLevel.MEMORY_AND_DISK, vertexStorageLevel = StorageLevel.MEMORY_AND_DISK)
-      val g2 = Israeli_Itai(g) //change this
+      var g2 = Israeli_Itai(g) //change this
 
       val endTimeMillis = System.currentTimeMillis()
       val durationSeconds = (endTimeMillis - startTimeMillis) / 1000
@@ -198,8 +200,9 @@ object main{
       println("Matching algorithm completed in " + durationSeconds + "s.") //change this
       println("==================================")
 
-      val g2df = spark.createDataFrame(g2.edges)
-      g2df.write.format("csv").mode("overwrite").save(args(2))
+      println("Answer is: " + g2)
+      //val g2df = spark.createDataFrame(g2.edges)
+      //g2df.write.format("csv").mode("overwrite").save(args(2))
    }
     else{
       println("Usage: final_project graph_path output_path")
