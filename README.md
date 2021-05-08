@@ -1,4 +1,8 @@
 # Large Scale Data Processing: Final Project
+Sean Chiang, Eileen (Yifan) Zhang, Joshua Yi
+
+## Our Matchings
+
 ## Graph matching
 For the final project, you are provided 6 CSV files, each containing an undirected graph, which can be found [here](https://drive.google.com/file/d/1khb-PXodUl82htpyWLMGGNrx-IzC55w8/view?usp=sharing). The files are as follows:  
 
@@ -24,19 +28,43 @@ Your output should be a CSV file listing all of the matched edges, 1 on each lin
 1,2  
 4,3  
 
-### No template is provided
-For the final project, you will need to write everything from scratch. Feel free to consult previous projects for ideas on structuring your code. That being said, you are provided a verifier that can confirm whether or not your output is a matching. As usual, you'll need to compile it with
-```
-sbt clean package
-```  
-The verifier accepts 2 file paths as arguments, the first being the path to the file containing the initial graph and the second being the path to the file containing the matching. It can be ran locally with the following command (keep in mind that your file paths may be different):
-```
-// Linux
-spark-submit --master local[*] --class final_project.verifier data/log_normal_100.csv data/log_normal_100_matching.csv
+## Proofs and Complexity
+### Israeli Itai
+The Israeli-Itai  is set up in the 2 stages along with 2 substages. The first stage is to find a subgraph of G, S, with a maximal degree of 2 or less. The second phase is to find a matching sparse subgraph. In stage 1 we randomly choose an edge that has an adjacent edge, and every vertex will then choose an incoming edge. In phase 2 each vertex will randomly choose an incident edge of S and if the edge belongs to the match of M is then removed from the graph G. As such the Isreali-itai system should complete at varying times depending on the quality of finding a good vertex and good edge. A bad vertex is if at least neighbors degrees is greater than its and a bad edge is if the endpoints are bad. So if it's not bad then it would be considered good. 
+	   There are 5 claims that will be covered for the Israeli-Itai algorithm.
 
-// Unix
-spark-submit --master "local[*]" --class "final_project.verifier" data/log_normal_100.csv data/log_normal_100_matching.csv
-```
+    1. The  probability  that  a  good  vertex  of positive  degree in  G i  has  a positive  degree in  S,  is greater than or equal to 1 - e^(-1/3)
+Proof. Let us assume that the vertex of degree d>0 in G and the neighbors u1,...,ud. The vertex will have k neighbors, with k being greater than or equal to 1/3d+1 such that dk= d(uk) is less than or equal to d. If any u then choose an edge in stage 1.1 of the algorithm the d of  S (v)>0.  The probability that U did choose is 1/dk greater than 1/d. If u did not choose the correct edge then the probability is
+    <img src="https://latex.codecogs.com/svg.image?\prod_{j=1}^{k}(1-1/d_{j})\leq&space;(1-1/d)^{d/3}=&space;[(1-1/d)^{d}]^{1/3}&space;<&space;e^{-1/3}" title="\prod_{j=1}^{k}(1-1/d_{j})\leq (1-1/d)^{d/3}= [(1-1/d)^{d}]^{1/3} < e^{-1/3}" />  
+    Thus we can assume that the probability that we found an edge is greater than 1 - e^(-⅓). This is assuming that the edge in 1.1 stage of the algorithm is indeed in S. 
+
+    2. The probability that a  vertex of positive degree  in  S  is incident  with  M i  is  greater than  or equal to  1/2.
+Proof. Let us assume the graph S is a collection of cycles and path. We can assume that there has to be an isolated edge in M and thus the probability that M is incident with one of its endpoints is 1 as well. Therefore the probability that M is incident with another vertex in G would be 1/2.
+
+    3. At  least  one-third of the  edges  of any graph are good.
+Proof. Let us assume that there is an arbitrary graph  G(V, E) and the each edge of the graph is directed from the endpoint of a smaller degree to a higher degree endpoint. For edges with an equal degree endpoint will be categorized lexicographically(ordered like 123, 132, 213, 231, 321). We then will have an acyclic directed graph.  
+  
+  Since  each bad vertex v in V satisfies din(v) less than or equal to ½ dout(v) we can assume that it is possible to associate each edge e that’s entering a bad vertex v a pair of edges that are disjointed. For every 2 bad edges let’s say e1 != e2 of G the edges s1(e1), s1(e2), s2(e1), s2(e2) are distinct. s1(e), s2(e) are twin pairs with the parent edge being e.  
+  
+  A root edge is a bad edge that either has no parent edge or has a twin edge that is good. A leaf edge is an edge that has at least one good edge successor. Since all successor edges are unique we can prove claim 3 by showing the number of leaf edges are greater than non leaf bad edges.   
+  
+  Let r1,..rk be the root edge of G and we partition the bad edges into k edge disjoint directed acyclic subgraph D1,...,Dk. The graph D will start with a root and will contain its successors and their successor until it reaches the leaf edges.   
+  
+  If the D graphs were full binary trees then the number of non leaf edges of D will be one less than  the amount of leaf edges of D. But since D does not have to be a binary tree, because two edges can enter the same vertex. However we will still construct a binary tree T for each D whose vertices will correspond to the edges of D. The vertices v1 and v2 are children of v in T, and if the corresponding edges e1 and e2 correspond to v. The number of leaf edges will be greater than the number of non leaf edges.
+
+    4. The probability  that  a  good edge of G is removed in phi(the ith phase) is at least  1/2[1 - e(-1/3)]. 
+Proof. We remove an edge in phi from M or adjacent to an edge of M. And this claims follows claim 1 and claim 2. Now that we know that at least ⅓ of the edges of any graph are good we can see that the number of expected edges to be removed in phi will be at least  1/6[1- e^(-1/3)]. We then most to our final claim. 
+
+    5. The expected number of phases of the algorithm is O(log|E|). 
+Proof. Since the expected number of edges removed in phi is at least 1/6[1- e^(-1/3)], the proof follows.  
+  
+However, the issue that arises from this algorithm is the equal probability choices in stages 1.1 and 1.2. Which can be solved if we dedicate a processor for each edge to run in O(log|E|). Leading to a total complexity of O(log^2|E|) expected time with |E| processors. 
+
+## Random Choice Operation
+The RCO probability of succeeding is greater 1-e^(-1). The minimal case is if there is only a single i in which xi=1. If that is the case the probability would be rj= i is 1/d and the probability for all processes is (1- 1/d)^d < e^-1. Thus the probability for success is greater than or equal to  1- (1- 1/d)^d > 1-e^-1  
+    If the number of nonzero entries is f then the probability of success is 1-e^-f. If f is an increasing function of d then it is approaching 1.
+    
+
 
 ## Deliverables
 * The output file (matching) for each test case.
