@@ -60,10 +60,23 @@ Proof. Since the expected number of edges removed in phi is at least 1/6[1- e^(-
   
 However, the issue that arises from this algorithm is the equal probability choices in stages 1.1 and 1.2. Which can be solved if we dedicate a processor for each edge to run in O(log|E|). Leading to a total complexity of O(log^2|E|) expected time with |E| processors. 
 
-## Random Choice Operation
+### Random Choice Operation
 The RCO probability of succeeding is greater 1-e^(-1). The minimal case is if there is only a single i in which xi=1. If that is the case the probability would be rj= i is 1/d and the probability for all processes is (1- 1/d)^d < e^-1. Thus the probability for success is greater than or equal to  1- (1- 1/d)^d > 1-e^-1  
-    If the number of nonzero entries is f then the probability of success is 1-e^-f. If f is an increasing function of d then it is approaching 1.
+    If the number of nonzero entries is f then the probability of success is 1-e^-f. If f is an increasing function of d then it is approaching 1.  
     
+### Random Choice Operation  
+    The amount of iteration that the Blossom Algorithm will take  
+Theorem - The blossom Algorithm requires at most n/2 calls to FIND_AUG_PATH function (a theoretical function that finds an augmented path, since we were unable to implement this on time)  
+Proof. The maximal matching in a graph with n nodes can have at most n/2 edges. We also know that the augmenting path function being called will increase the number of matching by 1. Therefore from an empty matching we can call the function at most n/2 times.  
+For each iteration of the augmenting path we will go through almost all the nodes in the graph and each node we will go through unmarked edges. There are 3 cases fro any given node and unmarked edge.   
+ - Case1. Blossom Recursion:
+   -  Within the blossom we go through all the nodes and edges and relabel the blossom nodes with a new id to identify them. Then going through all the nodes and edges in the graph we will get a cost of O(V+E)=O(m)  
+ - Case2 Add to Forest:
+   -  For edge e=(v,w), if (w,x) exists in M, x being the match of w, then we add the edges (v,w) and (w,x) to the Forest. We can append these edges in an O(1) operation. As such, the time complexity of this will be O(m) with at most m calls.  
+ - Case3 Return Augmenting path:
+   -  Once the augmented path is found the algorithm terminates and returns to a wrapper function to determine whether or not it should be reiterated. So for each Find_Aug_Path, case 3 will happen at most once and we can get a time complexity of O(n).  
+  
+Cost of Blossoming path:
 
 
 ## Deliverables
