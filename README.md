@@ -64,7 +64,7 @@ However, the issue that arises from this algorithm is the equal probability choi
 The RCO probability of succeeding is greater 1-e^(-1). The minimal case is if there is only a single i in which xi=1. If that is the case the probability would be rj= i is 1/d and the probability for all processes is (1- 1/d)^d < e^-1. Thus the probability for success is greater than or equal to  1- (1- 1/d)^d > 1-e^-1  
     If the number of nonzero entries is f then the probability of success is 1-e^-f. If f is an increasing function of d then it is approaching 1.  
     
-### Random Choice Operation  
+### Blossom Path  
     The amount of iteration that the Blossom Algorithm will take  
 Theorem - The blossom Algorithm requires at most n/2 calls to FIND_AUG_PATH function (a theoretical function that finds an augmented path, since we were unable to implement this on time)  
 Proof. The maximal matching in a graph with n nodes can have at most n/2 edges. We also know that the augmenting path function being called will increase the number of matching by 1. Therefore from an empty matching we can call the function at most n/2 times.  
@@ -76,7 +76,12 @@ For each iteration of the augmenting path we will go through almost all the node
  - Case3 Return Augmenting path:
    -  Once the augmented path is found the algorithm terminates and returns to a wrapper function to determine whether or not it should be reiterated. So for each Find_Aug_Path, case 3 will happen at most once and we can get a time complexity of O(n).  
   
-Cost of Blossoming path:
+Cost of Blossoming path:  
+<img src="https://latex.codecogs.com/svg.image?Total&space;Cost=&space;\underbrace{O(n)}_{\text{Iterations}}*[\underbrace{O(m)}_{\text{Case&space;1}}&plus;(\underbrace{O(m)}_{\text{Case&space;2}}&plus;\underbrace{O(m)}_{\text{Case&space;3}})*&space;\underbrace{O(n)}_{\text{Blossom&space;Recursions}}]&space;=&space;O(n^{2}&space;m)" title="Total Cost= \underbrace{O(n)}_{\text{Iterations}}*[\underbrace{O(m)}_{\text{Case 1}}+(\underbrace{O(m)}_{\text{Case 2}}+\underbrace{O(m)}_{\text{Case 3}})* \underbrace{O(n)}_{\text{Blossom Recursions}}] = O(n^{2} m)" />
+  
+#### Blossom Path Parallel:  
+Well we can only parallelize finding an augmented path since maximal matching has dependencies too sequential to parallelize. However, we can still add the alternating edge of the matching in parallel from the augmented path that is found sequentially.
+
 
 
 ## Deliverables
