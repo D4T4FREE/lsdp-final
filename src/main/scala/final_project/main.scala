@@ -108,6 +108,8 @@ object main{
   }
 
 
+  // we just ran out of time to finish augment... 
+
   // g_in : Graph G
   // m_in : matching M on G
   // def find_augmenting_path(g_in: Graph[Int,Int], m_in:Graph[Int,Int]):List[(Int,Int)]={ //path is a list of tuples
