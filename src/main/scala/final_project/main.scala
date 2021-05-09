@@ -84,7 +84,6 @@ object main{
       val v4:VertexRDD[Int] = g3.aggregateMessages[Int](
         triplet => {
           if (triplet.srcAttr == triplet.dstId.toInt && triplet.dstAttr > -1) {
-            println(triplet.srcId + "," + triplet.dstId)
             triplet.sendToDst(0 - triplet.srcAttr - Math.abs(triplet.srcId.toInt - triplet.dstId.toInt))
             triplet.sendToSrc(0 - triplet.srcAttr - Math.abs(triplet.srcId.toInt - triplet.dstId.toInt))
           }
@@ -103,8 +102,6 @@ object main{
       g.cache()
 
       remaining_vertices = g.triplets.filter({case triplet => (triplet.srcAttr >= 0) && (triplet.dstAttr >= 0)}).count().toInt
-      println(g.edges.filter({case edge => edge.attr != 0}).count())
-      println("finish:" + remaining_vertices)
     }
     //g.triplets.filter({case triplet => triplet.srcAttr == triplet.dstAttr}).collect.foreach(println(_))
     //mapTriplets(edge => if (edge.srcAttr == edge.dstAttr) edge else 0) //.edges.filter({case edge => edge.attr == 1})
