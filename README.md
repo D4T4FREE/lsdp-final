@@ -79,9 +79,21 @@ For each iteration of the augmenting path we will go through almost all the node
 Cost of Blossoming path:  
 <img src="https://latex.codecogs.com/svg.image?Total&space;Cost=&space;\underbrace{O(n)}_{\text{Iterations}}*[\underbrace{O(m)}_{\text{Case&space;1}}&plus;(\underbrace{O(m)}_{\text{Case&space;2}}&plus;\underbrace{O(m)}_{\text{Case&space;3}})*&space;\underbrace{O(n)}_{\text{Blossom&space;Recursions}}]&space;=&space;O(n^{2}&space;m)" title="Total Cost= \underbrace{O(n)}_{\text{Iterations}}*[\underbrace{O(m)}_{\text{Case 1}}+(\underbrace{O(m)}_{\text{Case 2}}+\underbrace{O(m)}_{\text{Case 3}})* \underbrace{O(n)}_{\text{Blossom Recursions}}] = O(n^{2} m)" />
   
-#### Blossom Path Parallel:  
-Well we can only parallelize finding an augmented path since maximal matching has dependencies too sequential to parallelize. However, we can still add the alternating edge of the matching in parallel from the augmented path that is found sequentially.
-
+### Blossom Path Parallel:  
+We can only parallelize finding the augmented path in a graph, since maximal matching has dependencies too sequential to parallelize. However, we can still add the alternating edge of the matching in parallel from the augmented path that is found sequentially.  
+Fortunately, adding to the Forest will not have to be modified by parallelism. We can also delay adding the edges to the forest, allowing the other two cases(blossom being found and when an augmented path is returned) to run first. There is no need to add to the forest until, it is certain that given v will have no returns or blossom recursions. Because of this the call for add_to_forest will be O(1). If there are no augmenting paths or blossom found there is a need to do post- processing by adding new edges to the forest and check to see if there are any blossoms to be found.  
+ 
+#### Complexity  
+Same as before there will 3 main cases of the algorithm.
+  -  Case1: Add to forest
+    -  the first part being collecting edges that are need for a temporary array(O(1) depth). The second part is post processing, which is also O(1)
+  - Case2: Blossom Recursion
+    -  Every Blossom recursion has an O(1) depth when contracting the graphs in parallel. But in the Worst case scenario, when deg v is less than or equal to O(n) blossom recursions for a one forest node v. 
+  - Case3: Return Augmenting Path
+    -  With the same complexity of running the algorithm without parallel we would get an O(n)cost dues to it being a sequential call. 
+  
+Total Cost:  
+<img src="https://latex.codecogs.com/svg.image?T_{\infty&space;}=&space;\underbrace{O(n)}_{\text{Iterations}}*[\underbrace{O(n)}_{\text{Forest&space;Nodes}}*&space;(\underbrace{O(n)}_{\text{Case1}}&plus;&space;\underbrace{O(n)}_{\text{Case2}s})*\underbrace{O(n)}_{\text{Blossom&space;Recursions}}&space;&plus;&space;\underbrace{O(n)}_{\text{Case3}}]=&space;O(n^{3})" title="T_{\infty }= \underbrace{O(n)}_{\text{Iterations}}*[\underbrace{O(n)}_{\text{Forest Nodes}}* (\underbrace{O(n)}_{\text{Case1}}+ \underbrace{O(n)}_{\text{Case2}s})*\underbrace{O(n)}_{\text{Blossom Recursions}} + \underbrace{O(n)}_{\text{Case3}}]= O(n^{3})" />  
 
 
 ## Deliverables
@@ -99,32 +111,5 @@ Well we can only parallelize finding an augmented path since maximal matching ha
   * Note that the presentation date is before the final project submission deadline. This means that you could still be working on the project when you present. You may present the approaches you're currently trying. You can also present a preliminary result, like the matchings you have at the moment. After your presentation, you'll be given feedback to help you complete or improve your work.
   * If any members of your group attend class in a different time zone, you may record and submit your presentation **by midnight on 5/3**.
 
-## Grading policy
-* Quality of matchings (40%)
-  * For each test case, you'll receive at least 70% of full credit if your matching size is at least half of the best answer in the class.
-  * **You will receive a 0 for any case where the verifier does not confirm that your output is a matching.** Please do not upload any output files that do not pass the verifier.
-* Project report (35%)
-  * Your report grade will be evaluated using the following criteria:
-    * Discussion of the merits of your algorithms
-    * Depth of technicality
-    * Novelty
-    * Completeness
-    * Readability
-* Presentation (15%)
-* Formatting (10%)
-  * If the format of your submission does not adhere to the instructions (e.g. output file naming conventions), points will be deducted in this category.
 
-## Submission via GitHub
-Delete your project's current **README.md** file (the one you're reading right now) and include your report as a new **README.md** file in the project root directory. Have no fear—the README with the project description is always available for reading in the template repository you created your repository from. For more information on READMEs, feel free to visit [this page](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-readmes) in the GitHub Docs. You'll be writing in [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown). Be sure that your repository is up to date and you have pushed all of your project's code. When you're ready to submit, simply provide the link to your repository in the Canvas assignment's submission.
 
-## You must do the following to receive full credit:
-1. Create your report in the ``README.md`` and push it to your repo.
-2. In the report, you must include your (and any partner's) full name in addition to any collaborators.
-3. Submit a link to your repo in the Canvas assignment.
-
-## Late submission penalties
-Beginning with the minute after the deadline, your submission will be docked a full letter grade (10%) for every 
-day that it is late. For example, if the assignment is due at 11:59 PM EST on Friday and you submit at 3:00 AM EST on Sunday,
-then you will be docked 20% and the maximum grade you could receive on that assignment is an 80%. 
-Late penalties are calculated from the last commit in the Git log.
-**If you make a commit more than 48 hours after the deadline, you will receive a 0.**
