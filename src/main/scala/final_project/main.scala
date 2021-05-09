@@ -108,7 +108,7 @@ object main{
   }
 
 
-  // we just ran out of time to finish augment... 
+  // we just ran out of time to finish augment...
 
   // g_in : Graph G
   // m_in : matching M on G
@@ -203,15 +203,15 @@ object main{
     val spark = SparkSession.builder.config(conf).getOrCreate()
 
 
-    if(args.length<3 || args.length>3){
+    if(args.length<2 || args.length>2){
       println("Usage: final_project graph_path output_path")
       sys.exit(1)
     }
 
-    if(args.length==3){
+    if(args.length==2){
 
       val startTimeMillis = System.currentTimeMillis()
-      val edges = sc.textFile(args(1)).map(line => {val x = line.split(","); Edge(x(0).toLong, x(1).toLong , 1)} )
+      val edges = sc.textFile(args(0)).map(line => {val x = line.split(","); Edge(x(0).toLong, x(1).toLong , 1)} )
       val g = Graph.fromEdges[Int, Int](edges, 0, edgeStorageLevel = StorageLevel.MEMORY_AND_DISK, vertexStorageLevel = StorageLevel.MEMORY_AND_DISK)
       var g2 = Israeli_Itai(g)
 
@@ -222,7 +222,7 @@ object main{
       println("==================================")
 
       val g2df = spark.createDataFrame(g2.edges.filter({case edge => edge.attr != 0}))
-      g2df.coalesce(1).write.format("csv").mode("overwrite").save(args(2))
+      g2df.coalesce(1).write.format("csv").mode("overwrite").save(args(1))
    }
     else{
       println("Usage: final_project graph_path output_path")
