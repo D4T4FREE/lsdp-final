@@ -85,8 +85,8 @@ object main{
         triplet => {
           if (triplet.srcAttr == triplet.dstId.toInt && triplet.dstAttr > -1) {
             println(triplet.srcId + "," + triplet.dstId)
-            triplet.sendToDst(0 - triplet.srcAttr)
-            triplet.sendToSrc(0 - triplet.srcAttr)
+            triplet.sendToDst(0 - triplet.srcAttr - Math.abs(triplet.srcId.toInt - triplet.dstId.toInt))
+            triplet.sendToSrc(0 - triplet.srcAttr - Math.abs(triplet.srcId.toInt - triplet.dstId.toInt))
           }
           else if (triplet.dstAttr > -1) {
             triplet.sendToDst(0)
@@ -98,15 +98,17 @@ object main{
       val g4 = g3.joinVertices(v4)(
         (uid, oldattr, finished) => if (oldattr > -1) finished else oldattr
       )
+
       g = g4
       g.cache()
 
       remaining_vertices = g.triplets.filter({case triplet => (triplet.srcAttr >= 0) && (triplet.dstAttr >= 0)}).count().toInt
+      println(g.edges.filter({case edge => edge.attr != 0}).count())
       println("finish:" + remaining_vertices)
     }
     //g.triplets.filter({case triplet => triplet.srcAttr == triplet.dstAttr}).collect.foreach(println(_))
     //mapTriplets(edge => if (edge.srcAttr == edge.dstAttr) edge else 0) //.edges.filter({case edge => edge.attr == 1})
-    val new_edges = g.mapTriplets(edge => if (edge.srcAttr != 0 && edge.srcAttr == edge.dstAttr) edge.srcAttr else 0) //.edges.filter({case edge => edge.attr == 1})
+    val new_edges = g.mapTriplets(edge => if (edge.srcAttr != 0 && edge.srcAttr == edge.dstAttr) edge.srcAttr else 0).convertToCanonicalEdges() //.edges.filter({case edge => edge.attr == 1})
     //val output = Graph.fromEdges[Int, Int](new_edges, 1, edgeStorageLevel = StorageLevel.MEMORY_AND_DISK, vertexStorageLevel = StorageLevel.MEMORY_AND_DISK)
     return new_edges
   }
