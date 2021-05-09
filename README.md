@@ -3,6 +3,12 @@ Sean Chiang, Eileen (Yifan) Zhang, Joshua Yi
 
 ## Our Matchings
 
+Unfortunately, we were unable to obtain any matchings for our input graphs. Our algorithm would work on smaller graphs, but as more and more iterations are run, it seems that we run out of memory to compute it all.
+We've attempted to remedy this by creating dynamically allocated clusters on GCP, as well as increase the amount of memory allocated to each node, but we would still run into the issue of running out of memory, whether it be via stack overflow or heap space.
+
+Through our analysis, we've come to the conclusion that our issue might be with the number of AggregateMessages rounds that we run upon the graph, as another group with only 2 rounds was able to get at least 2 of the matchings.
+We were not able to come up with a way to further reduce our messaging rounds, and as such we concluded that we are unable to obtain the matchings necessary for this deliverable.
+
 ## Graph matching
 For the final project, you are provided 6 CSV files, each containing an undirected graph, which can be found [here](https://drive.google.com/file/d/1khb-PXodUl82htpyWLMGGNrx-IzC55w8/view?usp=sharing). The files are as follows:  
 

@@ -17,8 +17,7 @@ object main{
   Logger.getLogger("org.spark-project").setLevel(Level.WARN)
 
   def Israeli_Itai(g_in: Graph[Int,Int]): Graph[Int, Int] = {
-    var g = g_in.convertToCanonicalEdges()
-    var g_out : List[(Int, Int)] = List()
+    var g = g_in
     var remaining_vertices = 2
     var r = scala.util.Random
 
@@ -51,21 +50,21 @@ object main{
       )
 
       // Step 2.5: do it again because i hate myself
-      val v5:VertexRDD[Int] = g2.aggregateMessages[Int](
-        triplet => {
-          if (triplet.dstAttr > -1 && triplet.dstAttr == triplet.srcId.toInt) {
-            triplet.sendToDst(0)
-            triplet.sendToSrc(triplet.dstId.toInt)
-          }
-        },
-        (a,b) => if (r.nextInt%2 == 1) a else b
-      )
-      val g5 = g2.joinVertices(v5)(
-        (uid, oldattr, filtered_id) => if (oldattr > -1) filtered_id else oldattr
-      )
+      // val v5:VertexRDD[Int] = g2.aggregateMessages[Int](
+      //   triplet => {
+      //     if (triplet.dstAttr > -1 && triplet.dstAttr == triplet.srcId.toInt) {
+      //       triplet.sendToDst(0)
+      //       triplet.sendToSrc(triplet.dstId.toInt)
+      //     }
+      //   },
+      //   (a,b) => if (r.nextInt%2 == 1) a else b
+      // )
+      // val g5 = g2.joinVertices(v5)(
+      //   (uid, oldattr, filtered_id) => if (oldattr > -1) filtered_id else oldattr
+      // )
 
       // Step 3: generate 0 and 1 for each vertex
-      val v3:VertexRDD[Int] = g5.aggregateMessages[Int](
+      val v3:VertexRDD[Int] = g2.aggregateMessages[Int](
         triplet => {
           if (triplet.srcAttr > -1) {
             triplet.sendToSrc(r.nextInt%2)
@@ -76,7 +75,7 @@ object main{
         },
         (a,b) => (a + b)%2
       )
-      val g3 = g5.joinVertices(v3)(
+      val g3 = g2.joinVertices(v3)(
         (uid, oldattr, onezero) => if (oldattr > -1) onezero*oldattr else oldattr
       )
 
@@ -103,8 +102,8 @@ object main{
 
       remaining_vertices = g.triplets.filter({case triplet => (triplet.srcAttr >= 0) && (triplet.dstAttr >= 0)}).count().toInt
     }
-    val new_edges = g.mapTriplets(edge => if (edge.srcAttr != 0 && edge.srcAttr == edge.dstAttr) edge.dstAttr else 0).groupEdges((a,b) => a).convertToCanonicalEdges()
-    return new_edges
+    val new_edges = g.mapTriplets(edge => if (edge.srcAttr != 0 && edge.srcAttr == edge.dstAttr) edge.dstAttr else 0).groupEdges((a,b) => a)
+    return new_edges.convertToCanonicalEdges()
   }
 
 
@@ -201,6 +200,8 @@ object main{
     val conf = new SparkConf().setAppName("final_project")
     val sc = new SparkContext(conf)
     val spark = SparkSession.builder.config(conf).getOrCreate()
+    conf.set("spark.executor.memory", "15g")
+    conf.set("spark.driver.memory", "15g")
 
 
     if(args.length<2 || args.length>2){
@@ -221,7 +222,8 @@ object main{
       println("Matching algorithm completed in " + durationSeconds + "s.")
       println("==================================")
 
-      val g2df = spark.createDataFrame(g2.edges.filter({case edge => edge.attr != 0}))
+      val g2edge = g2.edges.filter({case edge => edge.attr != 0})
+      val g2df = spark.createDataFrame(g2edge)
       g2df.coalesce(1).write.format("csv").mode("overwrite").save(args(1))
    }
     else{
