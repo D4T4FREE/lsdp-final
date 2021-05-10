@@ -102,20 +102,7 @@ Total Cost:
 <img src="https://latex.codecogs.com/svg.image?T_{\infty&space;}=&space;\underbrace{O(n)}_{\text{Iterations}}*[\underbrace{O(n)}_{\text{Forest&space;Nodes}}*&space;(\underbrace{O(n)}_{\text{Case1}}&plus;&space;\underbrace{O(n)}_{\text{Case2}s})*\underbrace{O(n)}_{\text{Blossom&space;Recursions}}&space;&plus;&space;\underbrace{O(n)}_{\text{Case3}}]=&space;O(n^{3})" title="T_{\infty }= \underbrace{O(n)}_{\text{Iterations}}*[\underbrace{O(n)}_{\text{Forest Nodes}}* (\underbrace{O(n)}_{\text{Case1}}+ \underbrace{O(n)}_{\text{Case2}s})*\underbrace{O(n)}_{\text{Blossom Recursions}} + \underbrace{O(n)}_{\text{Case3}}]= O(n^{3})" />  
 
 
-## Deliverables
-* The output file (matching) for each test case.
-  * For naming conventions, if the input file is `XXX.csv`, please name the output file `XXX_matching.csv`.
-  * You'll need to compress the output files into a single ZIP or TAR file before pushing to GitHub. If they're still too large, you can upload the files to Google Drive and include the sharing link in your report.
-* The code you've applied to produce the matchings.
-  * You should add your source code to the same directory as `verifier.scala` and push it to your repository.
-* A project report that includes the following:
-  * A table containing the size of the matching you obtained for each test case. The sizes must correspond to the matchings in your output files.
-  * An estimate of the amount of computation used for each test case. For example, "the program runs for 15 minutes on a 2x4 N1 core CPU in GCP." If you happen to be executing mulitple algorithms on a test case, report the total running time.
-  * Description(s) of your approach(es) for obtaining the matchings. It is possible to use different approaches for different cases. Please describe each of them as well as your general strategy if you were to receive a new test case.
-  * Discussion about the advantages of your algorithm(s). For example, does it guarantee a constraint on the number of shuffling rounds (say `O(log log n)` rounds)? Does it give you an approximation guarantee on the quality of the matching? If your algorithm has such a guarantee, please provide proofs or scholarly references as to why they hold in your report.
-* A live Zoom presentation during class time on 5/4 or 5/6.
-  * Note that the presentation date is before the final project submission deadline. This means that you could still be working on the project when you present. You may present the approaches you're currently trying. You can also present a preliminary result, like the matchings you have at the moment. After your presentation, you'll be given feedback to help you complete or improve your work.
-  * If any members of your group attend class in a different time zone, you may record and submit your presentation **by midnight on 5/3**.
+
 
 
 
